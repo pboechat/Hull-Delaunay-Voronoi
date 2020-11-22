@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 
 namespace HullDelaunayVoronoi.Primitives
 {
@@ -9,30 +8,49 @@ namespace HullDelaunayVoronoi.Primitives
 
         public float X
         {
-            get { return Position[0]; }
-            set { Position[0] = value; }
+            get
+            {
+                return Position[0];
+            }
+
+            set
+            {
+                Position[0] = value;
+            }
         }
 
         public float Y
         {
-            get { return Position[1]; }
-            set { Position[1] = value; }
+            get
+            {
+                return Position[1];
+            }
+
+            set
+            {
+                Position[1] = value;
+            }
         }
 
         public float Z
         {
-            get { return Position[2]; }
-            set { Position[2] = value; }
+            get
+            {
+                return Position[2];
+            }
+
+            set
+            {
+                Position[2] = value;
+            }
         }
 
         public Vertex3() : base(3)
         {
-
         }
 
         public Vertex3(int id) : base(3, id)
         {
-
         }
 
         public Vertex3(float x, float y, float z)
@@ -56,10 +74,7 @@ namespace HullDelaunayVoronoi.Primitives
             float x = Position[0] - px;
             float y = Position[1] - py;
             float z = Position[2] - pz;
-
             return x * x + y * y + z * z;
         }
-
-
     }
 }

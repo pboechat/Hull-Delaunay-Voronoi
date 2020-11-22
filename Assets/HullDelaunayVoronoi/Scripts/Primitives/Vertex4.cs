@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 
 namespace HullDelaunayVoronoi.Primitives
 {
@@ -9,36 +8,62 @@ namespace HullDelaunayVoronoi.Primitives
 
         public float X
         {
-            get { return Position[0]; }
-            set { Position[0] = value; }
+            get
+            {
+                return Position[0];
+            }
+
+            set
+            {
+                Position[0] = value;
+            }
         }
 
         public float Y
         {
-            get { return Position[1]; }
-            set { Position[1] = value; }
+            get
+            {
+                return Position[1];
+            }
+
+            set
+            {
+                Position[1] = value;
+            }
         }
 
         public float Z
         {
-            get { return Position[2]; }
-            set { Position[2] = value; }
+            get
+            {
+                return Position[2];
+            }
+
+            set
+            {
+                Position[2] = value;
+            }
         }
 
         public float W
         {
-            get { return Position[3]; }
-            set { Position[3] = value; }
+            get
+            {
+                return Position[3];
+            }
+
+            set
+            {
+                Position[3] = value;
+            }
         }
 
         public Vertex4() : base(4)
         {
-
         }
 
         public Vertex4(int id) : base(4, id)
         {
-
         }
 
         public Vertex4(float x, float y, float z, float w)
@@ -63,10 +88,7 @@ namespace HullDelaunayVoronoi.Primitives
             float y = Position[1] - py;
             float z = Position[2] - pz;
             float w = Position[3] - pw;
-
             return x * x + y * y + z * z + w * w;
         }
-
-
     }
 }

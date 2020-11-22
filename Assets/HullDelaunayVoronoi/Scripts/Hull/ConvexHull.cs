@@ -1,8 +1,7 @@
+using HullDelaunayVoronoi.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using HullDelaunayVoronoi.Primitives;
 
 namespace HullDelaunayVoronoi.Hull
 {
@@ -27,57 +26,76 @@ namespace HullDelaunayVoronoi.Hull
     }
 
     public class ConvexHull<VERTEX> : IConvexHull<VERTEX>
-        where VERTEX : class, IVertex, new()
+        where VERTEX : class, IVertex, new ()
     {
-
         private const float PLANE_DISTANCE_TOLERANCE = 1e-7f;
-
-        public int Dimension { get; private set; }
-
-        public IList<VERTEX> Vertices { get; private set; }
-
-        public IList<Simplex<VERTEX>> Simplexs { get; private set; }
-
-        public float[] Centroid { get; private set; }
-
-        private ObjectBuffer<VERTEX> Buffer { get; set; }
-
+        
+        public int Dimension
+        {
+            get;
+            private set;
+        }
+        
+        public IList<VERTEX> Vertices
+        {
+            get;
+            private set;
+        }
+        
+        public IList<Simplex<VERTEX>> Simplexs
+        {
+            get;
+            private set;
+        }
+        
+        public float[] Centroid
+        {
+            get;
+            private set;
+        }
+        
+        private ObjectBuffer<VERTEX> Buffer
+        {
+            get;
+            set;
+        }
+        
         public ConvexHull(int dimension)
         {
-
             Dimension = dimension;
-
             Centroid = new float[Dimension];
             Vertices = new List<VERTEX>();
             Simplexs = new List<Simplex<VERTEX>>();
-
         }
-
+        
         public bool Contains(VERTEX vertex)
         {
             int count = Simplexs.Count;
+
             for (int i = 0; i < count; i++)
             {
-                if (MathHelper<VERTEX>.GetVertexDistance(vertex, Simplexs[i]) >= PLANE_DISTANCE_TOLERANCE) return false;
+                if (MathHelper<VERTEX>.GetVertexDistance(vertex, Simplexs[i]) >= PLANE_DISTANCE_TOLERANCE)
+                {
+                    return false;
+                }
             }
 
             return true;
         }
-
+        
         #region Generate
-
         public void Generate(IList<VERTEX> input, bool assignIds = true, bool checkInput = false)
         {
-
             Clear();
-
             Buffer = new ObjectBuffer<VERTEX>(Dimension);
-
             int inputCount = input.Count;
-            if (inputCount < Dimension + 1) return;
+
+            if (inputCount < Dimension + 1)
+            {
+                return;
+            }
 
             Buffer.AddInput(input, assignIds, checkInput);
-
             InitConvexHull();
 
             // Expand the convex hull and faces.
@@ -85,38 +103,41 @@ namespace HullDelaunayVoronoi.Hull
             {
                 SimplexWrap<VERTEX> currentFace = Buffer.UnprocessedFaces.First;
                 Buffer.CurrentVertex = currentFace.FurthestVertex;
-
                 UpdateCenter();
-
                 // The affected faces get tagged
                 TagAffectedFaces(currentFace);
 
                 // Create the cone from the currentVertex and the affected faces horizon.
                 if (!Buffer.SingularVertices.Contains(Buffer.CurrentVertex) && CreateCone())
+                {
                     CommitCone();
+                }
+
                 else
+                {
                     HandleSingular();
+                }
 
                 // Need to reset the tags
                 int count = Buffer.AffectedFaceBuffer.Count;
+
                 for (int i = 0; i < count; i++)
+                {
                     Buffer.AffectedFaceBuffer[i].Tag = 0;
+                }
             }
 
             for (int i = 0; i < Buffer.ConvexSimplexs.Count; i++)
             {
                 SimplexWrap<VERTEX> wrap = Buffer.ConvexSimplexs[i];
                 wrap.Tag = i;
-
                 Simplexs.Add(new Simplex<VERTEX>(Dimension));
             }
 
             for (int i = 0; i < Buffer.ConvexSimplexs.Count; i++)
             {
-
                 SimplexWrap<VERTEX> wrap = Buffer.ConvexSimplexs[i];
                 Simplex<VERTEX> simplex = Simplexs[i];
-
                 simplex.IsNormalFlipped = wrap.IsNormalFlipped;
                 simplex.Offset = wrap.Offset;
 
@@ -126,9 +147,14 @@ namespace HullDelaunayVoronoi.Hull
                     simplex.Vertices[j] = wrap.Vertices[j];
 
                     if (wrap.AdjacentFaces[j] != null)
+                    {
                         simplex.Adjacent[j] = Simplexs[wrap.AdjacentFaces[j].Tag];
+                    }
+
                     else
+                    {
                         simplex.Adjacent[j] = null;
+                    }
                 }
 
                 simplex.CalculateCentroid();
@@ -136,20 +162,18 @@ namespace HullDelaunayVoronoi.Hull
 
             Buffer.Clear();
             Buffer = null;
-
         }
-
+        
         public void Clear()
         {
             Centroid = new float[Dimension];
             Simplexs.Clear();
             Vertices.Clear();
         }
-
+        
         #endregion
-
+        
         #region Initilization
-
         /// <summary>
         /// Find the (dimension+1) initial points and create the simplexes.
         /// </summary>
@@ -157,7 +181,6 @@ namespace HullDelaunayVoronoi.Hull
         {
             List<VERTEX> extremes = FindExtremes();
             List<VERTEX> initialPoints = FindInitialPoints(extremes);
-
             int numPoints = initialPoints.Count;
 
             // Add the initial points to the convex hull.
@@ -168,35 +191,39 @@ namespace HullDelaunayVoronoi.Hull
                 UpdateCenter();
                 Vertices.Add(Buffer.CurrentVertex);
                 Buffer.InputVertices.Remove(initialPoints[i]);
-
                 // Because of the AklTou heuristic.
                 extremes.Remove(initialPoints[i]);
             }
 
             // Create the initial simplexes.
             SimplexWrap<VERTEX>[] faces = InitiateFaceDatabase();
-
             int numFaces = faces.Length;
 
             // Init the vertex beyond buffers.
             for (int i = 0; i < numFaces; i++)
             {
                 FindBeyondVertices(faces[i]);
+
                 if (faces[i].VerticesBeyond.Count == 0)
-                    Buffer.ConvexSimplexs.Add(faces[i]); // The face is on the hull
+                {
+                    Buffer.ConvexSimplexs.Add(faces[i]);    // The face is on the hull
+                }
+
                 else
+                {
                     Buffer.UnprocessedFaces.Add(faces[i]);
+                }
             }
         }
-
+        
         /// <summary>
         /// Finds the extremes in all dimensions.
         /// </summary>
         private List<VERTEX> FindExtremes()
         {
             List<VERTEX> extremes = new List<VERTEX>(2 * Dimension);
-
             int vCount = Buffer.InputVertices.Count;
+
             for (int i = 0; i < Dimension; i++)
             {
                 float min = float.MaxValue, max = float.MinValue;
@@ -211,6 +238,7 @@ namespace HullDelaunayVoronoi.Hull
                         min = v;
                         minInd = j;
                     }
+
                     if (v > max)
                     {
                         max = v;
@@ -223,12 +251,16 @@ namespace HullDelaunayVoronoi.Hull
                     extremes.Add(Buffer.InputVertices[minInd]);
                     extremes.Add(Buffer.InputVertices[maxInd]);
                 }
-                else extremes.Add(Buffer.InputVertices[minInd]);
+
+                else
+                {
+                    extremes.Add(Buffer.InputVertices[minInd]);
+                }
             }
 
             return extremes;
         }
-
+        
         /// <summary>
         /// Computes the sum of square distances to the initial points.
         /// </summary>
@@ -250,14 +282,13 @@ namespace HullDelaunayVoronoi.Hull
 
             return sum;
         }
-
+        
         /// <summary>
         /// Finds (dimension + 1) initial points.
         /// </summary>
         private List<VERTEX> FindInitialPoints(List<VERTEX> extremes)
         {
             List<VERTEX> initialPoints = new List<VERTEX>();
-
             VERTEX first = null, second = null;
             float maxDist = 0.0f;
             float[] temp = new float[Dimension];
@@ -265,12 +296,11 @@ namespace HullDelaunayVoronoi.Hull
             for (int i = 0; i < extremes.Count - 1; i++)
             {
                 VERTEX a = extremes[i];
+
                 for (int j = i + 1; j < extremes.Count; j++)
                 {
                     VERTEX b = extremes[j];
-
                     MathHelper<VERTEX>.SubtractFast(a.Position, b.Position, temp);
-
                     float dist = MathHelper<VERTEX>.LengthSquared(temp);
 
                     if (dist > maxDist)
@@ -293,7 +323,11 @@ namespace HullDelaunayVoronoi.Hull
                 for (int j = 0; j < extremes.Count; j++)
                 {
                     VERTEX extreme = extremes[j];
-                    if (initialPoints.Contains(extreme)) continue;
+
+                    if (initialPoints.Contains(extreme))
+                    {
+                        continue;
+                    }
 
                     float val = GetSquaredDistanceSum(extreme, initialPoints);
 
@@ -308,13 +342,19 @@ namespace HullDelaunayVoronoi.Hull
                 {
                     initialPoints.Add(maxPoint);
                 }
+
                 else
                 {
                     int vCount = Buffer.InputVertices.Count;
+
                     for (int j = 0; j < vCount; j++)
                     {
                         VERTEX point = Buffer.InputVertices[j];
-                        if (initialPoints.Contains(point)) continue;
+
+                        if (initialPoints.Contains(point))
+                        {
+                            continue;
+                        }
 
                         float val = GetSquaredDistanceSum(point, initialPoints);
 
@@ -326,15 +366,20 @@ namespace HullDelaunayVoronoi.Hull
                     }
 
                     if (maxPoint != null)
+                    {
                         initialPoints.Add(maxPoint);
+                    }
+
                     else
+                    {
                         new SingularInputException("Singular input data error");
+                    }
                 }
             }
 
             return initialPoints;
         }
-
+        
         /// <summary>
         /// Create the first faces from (dimension + 1) vertices.
         /// </summary>
@@ -346,10 +391,8 @@ namespace HullDelaunayVoronoi.Hull
             {
                 var vertices = Vertices.Where((_, j) => i != j).ToArray(); // Skips the i-th vertex
                 var newFace = new SimplexWrap<VERTEX>(Dimension, new VertexBuffer<VERTEX>());
-
                 newFace.Vertices = vertices;
                 Array.Sort(vertices, new VertexIdComparer<VERTEX>());
-
                 CalculateFacePlane(newFace);
                 faces[i] = newFace;
             }
@@ -358,12 +401,14 @@ namespace HullDelaunayVoronoi.Hull
             for (var i = 0; i < Dimension; i++)
             {
                 for (var j = i + 1; j < Dimension + 1; j++)
+                {
                     UpdateAdjacency(faces[i], faces[j]);
+                }
             }
 
             return faces;
         }
-
+        
         /// <summary>
         /// Calculates the normal and offset of the hyper-plane given by the face's vertices.
         /// </summary>
@@ -395,16 +440,22 @@ namespace HullDelaunayVoronoi.Hull
             if (centerDistance > 0)
             {
                 for (int i = 0; i < Dimension; i++)
+                {
                     normal[i] = -normal[i];
+                }
 
                 face.Offset = offset;
                 face.IsNormalFlipped = true;
             }
-            else face.IsNormalFlipped = false;
+
+            else
+            {
+                face.IsNormalFlipped = false;
+            }
 
             return true;
         }
-
+        
         /// <summary>
         /// Check if 2 faces are adjacent and if so, update their AdjacentFaces array.
         /// </summary>
@@ -415,54 +466,77 @@ namespace HullDelaunayVoronoi.Hull
             int i;
 
             // reset marks on the 1st face
-            for (i = 0; i < Dimension; i++) lv[i].Tag = 0;
+            for (i = 0; i < Dimension; i++)
+            {
+                lv[i].Tag = 0;
+            }
 
             // mark all vertices on the 2nd face
-            for (i = 0; i < Dimension; i++) rv[i].Tag = 1;
+            for (i = 0; i < Dimension; i++)
+            {
+                rv[i].Tag = 1;
+            }
 
             // find the 1st false index
-            for (i = 0; i < Dimension; i++) if (lv[i].Tag == 0) break;
+            for (i = 0; i < Dimension; i++) if (lv[i].Tag == 0)
+                {
+                    break;
+                }
 
             // no vertex was marked
-            if (i == Dimension) return;
+            if (i == Dimension)
+            {
+                return;
+            }
 
             // check if only 1 vertex wasn't marked
-            for (int j = i + 1; j < Dimension; j++) if (lv[j].Tag == 0) return;
+            for (int j = i + 1; j < Dimension; j++) if (lv[j].Tag == 0)
+                {
+                    return;
+                }
 
             // if we are here, the two faces share an edge
             l.AdjacentFaces[i] = r;
 
             // update the adj. face on the other face - find the vertex that remains marked
-            for (i = 0; i < Dimension; i++) lv[i].Tag = 0;
             for (i = 0; i < Dimension; i++)
             {
-                if (rv[i].Tag == 1) break;
+                lv[i].Tag = 0;
             }
+
+            for (i = 0; i < Dimension; i++)
+            {
+                if (rv[i].Tag == 1)
+                {
+                    break;
+                }
+            }
+
             r.AdjacentFaces[i] = l;
         }
-
+        
         /// <summary>
         /// Used in the "initialization" code.
         /// </summary>
         private void FindBeyondVertices(SimplexWrap<VERTEX> face)
         {
             VertexBuffer<VERTEX> beyondVertices = face.VerticesBeyond;
-
             Buffer.MaxDistance = float.NegativeInfinity;
             Buffer.FurthestVertex = default(VERTEX);
-
             int count = Buffer.InputVertices.Count;
 
             for (int i = 0; i < count; i++)
+            {
                 IsBeyond(face, beyondVertices, Buffer.InputVertices[i]);
+            }
 
             face.FurthestVertex = Buffer.FurthestVertex;
         }
-
+        
         #endregion
-
+        
         #region Process
-
+        
         /// <summary>
         /// Tags all faces seen from the current vertex with 1.
         /// </summary>
@@ -472,13 +546,12 @@ namespace HullDelaunayVoronoi.Hull
             Buffer.AffectedFaceBuffer.Add(currentFace);
             TraverseAffectedFaces(currentFace);
         }
-
+        
         /// <summary>
         /// Recursively traverse all the relevant faces.
         /// </summary>
         private void TraverseAffectedFaces(SimplexWrap<VERTEX> currentFace)
         {
-
             Buffer.TraverseStack.Clear();
             Buffer.TraverseStack.Push(currentFace);
             currentFace.Tag = 1;
@@ -491,7 +564,10 @@ namespace HullDelaunayVoronoi.Hull
                 {
                     SimplexWrap<VERTEX> adjFace = top.AdjacentFaces[i];
 
-                    if (adjFace == null) throw new NullReferenceException("(2) Adjacent Face should never be null");
+                    if (adjFace == null)
+                    {
+                        throw new NullReferenceException("(2) Adjacent Face should never be null");
+                    }
 
                     if (adjFace.Tag == 0 && MathHelper<VERTEX>.GetVertexDistance(Buffer.CurrentVertex, adjFace) >= PLANE_DISTANCE_TOLERANCE)
                     {
@@ -502,7 +578,7 @@ namespace HullDelaunayVoronoi.Hull
                 }
             }
         }
-
+        
         /// <summary>
         /// Removes the faces "covered" by the current vertex and adds the newly created ones.
         /// </summary>
@@ -514,14 +590,17 @@ namespace HullDelaunayVoronoi.Hull
             for (int fIndex = 0; fIndex < Buffer.AffectedFaceBuffer.Count; fIndex++)
             {
                 SimplexWrap<VERTEX> oldFace = Buffer.AffectedFaceBuffer[fIndex];
-
                 // Find the faces that need to be updated
                 int updateCount = 0;
+
                 for (int i = 0; i < Dimension; i++)
                 {
                     SimplexWrap<VERTEX> af = oldFace.AdjacentFaces[i];
 
-                    if (af == null) throw new NullReferenceException("(3) Adjacent Face should never be null");
+                    if (af == null)
+                    {
+                        throw new NullReferenceException("(3) Adjacent Face should never be null");
+                    }
 
                     if (af.Tag == 0) // Tag == 0 when oldFaces does not contain af
                     {
@@ -534,7 +613,6 @@ namespace HullDelaunayVoronoi.Hull
                 for (int i = 0; i < updateCount; i++)
                 {
                     SimplexWrap<VERTEX> adjacentFace = Buffer.UpdateBuffer[i];
-
                     int oldFaceAdjacentIndex = 0;
                     SimplexWrap<VERTEX>[] adjFaceAdjacency = adjacentFace.AdjacentFaces;
 
@@ -549,29 +627,32 @@ namespace HullDelaunayVoronoi.Hull
 
                     // Index of the face that corresponds to this adjacent face
                     int forbidden = Buffer.UpdateIndices[i];
-
                     SimplexWrap<VERTEX> newFace;
-
                     int oldVertexIndex;
                     VERTEX[] vertices;
-
                     newFace = Buffer.ObjectManager.GetFace();
                     vertices = newFace.Vertices;
 
                     for (int j = 0; j < Dimension; j++)
+                    {
                         vertices[j] = oldFace.Vertices[j];
+                    }
 
                     oldVertexIndex = vertices[forbidden].Id;
-
                     int orderedPivotIndex;
 
                     // correct the ordering
                     if (currentVertexIndex < oldVertexIndex)
                     {
                         orderedPivotIndex = 0;
+
                         for (int j = forbidden - 1; j >= 0; j--)
                         {
-                            if (vertices[j].Id > currentVertexIndex) vertices[j + 1] = vertices[j];
+                            if (vertices[j].Id > currentVertexIndex)
+                            {
+                                vertices[j + 1] = vertices[j];
+                            }
+
                             else
                             {
                                 orderedPivotIndex = j + 1;
@@ -579,12 +660,18 @@ namespace HullDelaunayVoronoi.Hull
                             }
                         }
                     }
+
                     else
                     {
                         orderedPivotIndex = Dimension - 1;
+
                         for (int j = forbidden + 1; j < Dimension; j++)
                         {
-                            if (vertices[j].Id < currentVertexIndex) vertices[j - 1] = vertices[j];
+                            if (vertices[j].Id < currentVertexIndex)
+                            {
+                                vertices[j - 1] = vertices[j];
+                            }
+
                             else
                             {
                                 orderedPivotIndex = j - 1;
@@ -606,23 +693,21 @@ namespace HullDelaunayVoronoi.Hull
 
             return true;
         }
-
+        
         /// <summary>
         /// Creates a new deferred face.
         /// </summary>
         private DeferredSimplex<VERTEX> MakeDeferredFace(SimplexWrap<VERTEX> face, int faceIndex, SimplexWrap<VERTEX> pivot, int pivotIndex, SimplexWrap<VERTEX> oldFace)
         {
             DeferredSimplex<VERTEX> ret = Buffer.ObjectManager.GetDeferredSimplex();
-
             ret.Face = face;
             ret.FaceIndex = faceIndex;
             ret.Pivot = pivot;
             ret.PivotIndex = pivotIndex;
             ret.OldFace = oldFace;
-
             return ret;
         }
-
+        
         /// <summary>
         /// Commits a cone and adds a vertex to the convex hull.
         /// </summary>
@@ -635,19 +720,21 @@ namespace HullDelaunayVoronoi.Hull
             for (int i = 0; i < Buffer.ConeFaceBuffer.Count; i++)
             {
                 DeferredSimplex<VERTEX> face = Buffer.ConeFaceBuffer[i];
-
                 SimplexWrap<VERTEX> newFace = face.Face;
                 SimplexWrap<VERTEX> adjacentFace = face.Pivot;
                 SimplexWrap<VERTEX> oldFace = face.OldFace;
                 int orderedPivotIndex = face.FaceIndex;
-
                 newFace.AdjacentFaces[orderedPivotIndex] = adjacentFace;
                 adjacentFace.AdjacentFaces[face.PivotIndex] = newFace;
 
                 // let there be a connection.
                 for (int j = 0; j < Dimension; j++)
                 {
-                    if (j == orderedPivotIndex) continue;
+                    if (j == orderedPivotIndex)
+                    {
+                        continue;
+                    }
+
                     SimplexConnector<VERTEX> connector = Buffer.ObjectManager.GetConnector();
                     connector.Update(newFace, j, Dimension);
                     ConnectFace(connector);
@@ -658,6 +745,7 @@ namespace HullDelaunayVoronoi.Hull
                 {
                     FindBeyondVertices(newFace, adjacentFace.VerticesBeyond, oldFace.VerticesBeyond);
                 }
+
                 else
                 {
                     FindBeyondVertices(newFace, oldFace.VerticesBeyond, adjacentFace.VerticesBeyond);
@@ -671,6 +759,7 @@ namespace HullDelaunayVoronoi.Hull
                     Buffer.ObjectManager.DepositVertexBuffer(newFace.VerticesBeyond);
                     newFace.VerticesBeyond = Buffer.EmptyBuffer;
                 }
+
                 else // Add the face to the list
                 {
                     Buffer.UnprocessedFaces.Add(newFace);
@@ -688,11 +777,11 @@ namespace HullDelaunayVoronoi.Hull
                 Buffer.ObjectManager.DepositFace(face);
             }
         }
-
+        
         /// <summary>
         /// Connect faces using a connector.
         /// </summary>
-        void ConnectFace(SimplexConnector<VERTEX> connector)
+        private void ConnectFace(SimplexConnector<VERTEX> connector)
         {
             var index = connector.HashCode % Buffer.CONNECTOR_TABLE_SIZE;
             var list = Buffer.ConnectorTable[index];
@@ -703,7 +792,6 @@ namespace HullDelaunayVoronoi.Hull
                 {
                     list.Remove(current);
                     SimplexConnector<VERTEX>.Connect(current, connector);
-
                     Buffer.ObjectManager.DepositConnector(current);
                     Buffer.ObjectManager.DepositConnector(connector);
                     return;
@@ -712,50 +800,64 @@ namespace HullDelaunayVoronoi.Hull
 
             list.Add(connector);
         }
-
+        
         /// <summary>
         /// Used by update faces.
         /// </summary>
         private void FindBeyondVertices(SimplexWrap<VERTEX> face, VertexBuffer<VERTEX> beyond, VertexBuffer<VERTEX> beyond1)
         {
             var beyondVertices = Buffer.BeyondBuffer;
-
             Buffer.MaxDistance = float.NegativeInfinity;
             Buffer.FurthestVertex = null;
             VERTEX v;
-
             int count = beyond1.Count;
 
             for (int i = 0; i < count; i++)
+            {
                 beyond1[i].Tag = 1;
+            }
 
             Buffer.CurrentVertex.Tag = 0;
-
             count = beyond.Count;
+
             for (int i = 0; i < count; i++)
             {
                 v = beyond[i];
-                if (ReferenceEquals(v, Buffer.CurrentVertex)) continue;
+
+                if (ReferenceEquals(v, Buffer.CurrentVertex))
+                {
+                    continue;
+                }
+
                 v.Tag = 0;
                 IsBeyond(face, beyondVertices, v);
             }
 
             count = beyond1.Count;
+
             for (int i = 0; i < count; i++)
             {
                 v = beyond1[i];
-                if (v.Tag == 1) IsBeyond(face, beyondVertices, v);
+
+                if (v.Tag == 1)
+                {
+                    IsBeyond(face, beyondVertices, v);
+                }
             }
 
             face.FurthestVertex = Buffer.FurthestVertex;
-
             // Pull the old switch a roo
             var temp = face.VerticesBeyond;
             face.VerticesBeyond = beyondVertices;
-            if (temp.Count > 0) temp.Clear();
+
+            if (temp.Count > 0)
+            {
+                temp.Clear();
+            }
+
             Buffer.BeyondBuffer = temp;
         }
-
+        
         /// <summary>
         /// Handles singular vertex.
         /// </summary>
@@ -769,6 +871,7 @@ namespace HullDelaunayVoronoi.Hull
             {
                 var face = Buffer.AffectedFaceBuffer[fIndex];
                 var vb = face.VerticesBeyond;
+
                 for (int i = 0; i < vb.Count; i++)
                 {
                     Buffer.SingularVertices.Add(vb[i]);
@@ -780,9 +883,9 @@ namespace HullDelaunayVoronoi.Hull
                 face.VerticesBeyond = Buffer.EmptyBuffer;
             }
         }
-
+        
         #endregion
-
+        
         /// <summary>
         /// Check whether the vertex v is beyond the given face. If so, add it to beyondVertices.
         /// </summary>
@@ -797,10 +900,11 @@ namespace HullDelaunayVoronoi.Hull
                     Buffer.MaxDistance = distance;
                     Buffer.FurthestVertex = v;
                 }
+
                 beyondVertices.Add(v);
             }
         }
-
+        
         /// <summary>
         /// Recalculates the centroid of the current hull.
         /// </summary>
@@ -809,14 +913,18 @@ namespace HullDelaunayVoronoi.Hull
             int count = Vertices.Count + 1;
 
             for (int i = 0; i < Dimension; i++)
+            {
                 Centroid[i] *= (count - 1);
+            }
 
             float f = 1.0f / count;
 
             for (int i = 0; i < Dimension; i++)
+            {
                 Centroid[i] = f * (Centroid[i] + Buffer.CurrentVertex.Position[i]);
+            }
         }
-
+        
         /// <summary>
         /// Removes the last vertex from the center.
         /// </summary>
@@ -825,14 +933,16 @@ namespace HullDelaunayVoronoi.Hull
             int count = Vertices.Count + 1;
 
             for (int i = 0; i < Dimension; i++)
+            {
                 Centroid[i] *= count;
+            }
 
             float f = 1.0f / (count - 1);
 
             for (int i = 0; i < Dimension; i++)
+            {
                 Centroid[i] = f * (Centroid[i] - Buffer.CurrentVertex.Position[i]);
+            }
         }
-
     }
-
 }

@@ -1,46 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
-
-using HullDelaunayVoronoi.Hull;
+﻿using HullDelaunayVoronoi.Hull;
 using HullDelaunayVoronoi.Primitives;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace HullDelaunayVoronoi.Delaunay
 {
-
     public class DelaunayTriangulation2 : DelaunayTriangulation2<Vertex2>
     {
-
     }
 
     public class DelaunayTriangulation2<VERTEX> : DelaunayTriangulation<VERTEX>
-        where VERTEX : class, IVertex, new()
+        where VERTEX : class, IVertex, new ()
     {
-
-        private float[,] m_matrixBuffer;
-
+        private readonly float[,] m_matrixBuffer;
+        
         public DelaunayTriangulation2() : base(2)
         {
-
             m_matrixBuffer = new float[3, 3];
-
         }
-
+        
         public override void Generate(IList<VERTEX> input, bool assignIds = true, bool checkInput = false)
         {
-
             Clear();
-            if (input.Count <= Dimension + 1) return;
+
+            if (input.Count <= Dimension + 1)
+            {
+                return;
+            }
 
             int count = input.Count;
+
             for (int i = 0; i < count; i++)
             {
                 float lenSq = input[i].SqrMagnitude;
-
                 float[] v = input[i].Position;
                 Array.Resize(ref v, Dimension + 1);
                 input[i].Position = v;
-
-                input[i].Position[Dimension] = (float)lenSq;
+                input[i].Position[Dimension] = lenSq;
             }
 
             var hull = new ConvexHull<VERTEX>(Dimension + 1);
@@ -56,12 +53,10 @@ namespace HullDelaunayVoronoi.Delaunay
             Vertices = new List<VERTEX>(hull.Vertices);
             Centroid.Position[0] = hull.Centroid[0];
             Centroid.Position[1] = hull.Centroid[1];
-
             count = hull.Simplexs.Count;
 
             for (int i = 0; i < count; i++)
             {
-
                 Simplex<VERTEX> simplex = hull.Simplexs[i];
 
                 if (simplex.Normal[Dimension] >= 0.0f)
@@ -74,32 +69,33 @@ namespace HullDelaunayVoronoi.Delaunay
                         }
                     }
                 }
+
                 else
                 {
-                    DelaunayCell<VERTEX> cell = CreateCell(simplex);
+                    var cell = CreateCell(simplex);
                     //cell.CircumCenter.Id = i;
                     Cells.Add(cell);
                 }
-
             }
-
         }
-
+        
         private float Determinant()
         {
             float fCofactor00 = m_matrixBuffer[1, 1] * m_matrixBuffer[2, 2] - m_matrixBuffer[1, 2] * m_matrixBuffer[2, 1];
             float fCofactor10 = m_matrixBuffer[1, 2] * m_matrixBuffer[2, 0] - m_matrixBuffer[1, 0] * m_matrixBuffer[2, 2];
             float fCofactor20 = m_matrixBuffer[1, 0] * m_matrixBuffer[2, 1] - m_matrixBuffer[1, 1] * m_matrixBuffer[2, 0];
-
             float fDet = m_matrixBuffer[0, 0] * fCofactor00 + m_matrixBuffer[0, 1] * fCofactor10 + m_matrixBuffer[0, 2] * fCofactor20;
-
             return fDet;
         }
-
-        private DelaunayCell<VERTEX> CreateCell(Simplex<VERTEX> simplex)
+        
+        protected virtual IDelaunayCell<VERTEX> CreateCell(Simplex<VERTEX> simplex, float[] circumCenter, float radius)
+        {
+            return new DelaunayCell<VERTEX>(simplex, circumCenter, radius);
+        }
+        
+        private IDelaunayCell<VERTEX> CreateCell(Simplex<VERTEX> simplex)
         {
             // From MathWorld: http://mathworld.wolfram.com/Circumcircle.html
-
             VERTEX[] verts = simplex.Vertices;
 
             // x, y, 1
@@ -133,23 +129,33 @@ namespace HullDelaunayVoronoi.Delaunay
             {
                 m_matrixBuffer[i, 2] = verts[i].Position[1];
             }
+
             float c = -Determinant();
-
             float s = -1.0f / (2.0f * a);
-
             float[] circumCenter = new float[2];
             circumCenter[0] = s * dx;
             circumCenter[1] = s * dy;
-
             float radius = Math.Abs(s) * (float)Math.Sqrt(dx * dx + dy * dy - 4.0 * a * c);
-
-            return new DelaunayCell<VERTEX>(simplex, circumCenter, radius);
-
+            return CreateCell(simplex, circumCenter, radius);
         }
-
-
     }
 
+    public class DecoratedDelaunayTriangulation2<VERTEX, CELLDATA> : DelaunayTriangulation2<VERTEX>, IDecoratedDelaunayTriangulation<VERTEX, CELLDATA>
+        where VERTEX : class, IVertex, new ()
+        where CELLDATA : new ()
+    {
+        public IList<IDecoratedDelaunayCell<VERTEX, CELLDATA>> DecoratedCells
+        {
+            get
+            {
+                return Cells.Cast<IDecoratedDelaunayCell<VERTEX, CELLDATA>>().ToList();
+            }
+        }
+        protected override IDelaunayCell<VERTEX> CreateCell(Simplex<VERTEX> simplex, float[] circumCenter, float radius)
+        {
+            return new DecoratedDelaunayCell<VERTEX, CELLDATA>(simplex, circumCenter, radius);
+        }
+    }
 }
 
 

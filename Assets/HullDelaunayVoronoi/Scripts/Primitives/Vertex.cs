@@ -4,31 +4,48 @@ using System.Collections.Generic;
 namespace HullDelaunayVoronoi.Primitives
 {
 
-	public abstract class Vertex : IVertex
+    public abstract class Vertex : IVertex
     {
-		public int Dimension { get { return (Position != null) ? Position.Length : 0; } }
-		
-		public int Id { get; set; }
+        public int Dimension
+        {
+            get
+            {
+                return (Position != null) ? Position.Length : 0;
+            }
+        }
 
-        public int Tag { get; set; }
-		
-		public float[] Position { get; set; }
+        public int Id
+        {
+            get;
+            set;
+        }
+
+        public int Tag
+        {
+            get;
+            set;
+        }
+
+        public float[] Position
+        {
+            get;
+            set;
+        }
 
         public Vertex()
         {
-
         }
 
         public Vertex(int dimension)
-		{
-			Position = new float[dimension];
-		}
-		
-		public Vertex(int dimension, int id)
-		{
-			Position = new float[dimension];
-			Id = id;
-		}
+        {
+            Position = new float[dimension];
+        }
+
+        public Vertex(int dimension, int id)
+        {
+            Position = new float[dimension];
+            Id = id;
+        }
 
         public float Magnitude
         {
@@ -45,10 +62,11 @@ namespace HullDelaunayVoronoi.Primitives
                 float sum = 0.0f;
 
                 for (int i = 0; i < Dimension; i++)
+                {
                     sum += Position[i] * Position[i];
+                }
 
                 return sum;
-
             }
         }
 
@@ -77,7 +95,7 @@ namespace HullDelaunayVoronoi.Primitives
     /// Compare vertices based on their indices.
     /// </summary>
     public class VertexIdComparer<VERTEX> : IComparer<VERTEX>
-        where VERTEX : IVertex, new()
+        where VERTEX : IVertex, new ()
     {
         public int Compare(VERTEX v0, VERTEX v1)
         {

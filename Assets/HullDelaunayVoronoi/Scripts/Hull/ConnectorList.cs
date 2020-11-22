@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 using HullDelaunayVoronoi.Primitives;
 
 namespace HullDelaunayVoronoi.Hull
@@ -9,31 +6,37 @@ namespace HullDelaunayVoronoi.Hull
     /// Connector list.
     /// </summary>
     internal class ConnectorList<VERTEX>
-        where VERTEX : IVertex, new()
+        where VERTEX : IVertex, new ()
     {
         private SimplexConnector<VERTEX> first, last;
-
+        
         /// <summary>
         /// Get the first element.
         /// </summary>
-        internal SimplexConnector<VERTEX> First { get { return first; } }
-
+        internal SimplexConnector<VERTEX> First
+        {
+            get
+            {
+                return first;
+            }
+        }
+        
         internal void Clear()
         {
             first = null;
             last = null;
         }
-
+        
         /// <summary>
         /// Adds the element to the beginning.
         /// </summary>
-        void AddFirst(SimplexConnector<VERTEX> connector)
+        private void AddFirst(SimplexConnector<VERTEX> connector)
         {
             this.first.Previous = connector;
             connector.Next = this.first;
             this.first = connector;
         }
-
+        
         /// <summary>
         /// Adds a face to the list.
         /// </summary>
@@ -43,14 +46,16 @@ namespace HullDelaunayVoronoi.Hull
             {
                 this.last.Next = element;
             }
+
             element.Previous = this.last;
             this.last = element;
+
             if (this.first == null)
             {
                 this.first = element;
             }
         }
-
+        
         /// <summary>
         /// Removes the element from the list.
         /// </summary>
@@ -60,6 +65,7 @@ namespace HullDelaunayVoronoi.Hull
             {
                 connector.Previous.Next = connector.Next;
             }
+
             else if (connector.Previous == null)
             {
                 this.first = connector.Next;
@@ -69,6 +75,7 @@ namespace HullDelaunayVoronoi.Hull
             {
                 connector.Next.Previous = connector.Previous;
             }
+
             else if (connector.Next == null)
             {
                 this.last = connector.Previous;

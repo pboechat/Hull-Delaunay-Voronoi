@@ -4,12 +4,13 @@ using System.Collections.Generic;
 
 namespace HullDelaunayVoronoi.Voronoi
 {
-    public interface IVoronoiMesh<VERTEX>
+    public interface IVoronoiRegion<VERTEX>
         where VERTEX : class, IVertex, new ()
     {
-        int Dimension
+        int Id
         {
             get;
+            set;
         }
         
         IList<IDelaunayCell<VERTEX>> Cells
@@ -17,42 +18,31 @@ namespace HullDelaunayVoronoi.Voronoi
             get;
         }
         
-        IList<IVoronoiRegion<VERTEX>> Regions
+        IList<IVoronoiEdge<VERTEX>> Edges
         {
             get;
         }
-        
-        void Clear();
-        
-        void Generate(IList<VERTEX> input, bool assignIds = true, bool checkInput = false);
     }
 
-    public interface IDecoratedVoronoiMesh<VERTEX, REGIONDATA, EDGEDATA, CELLDATA> : IVoronoiMesh<VERTEX>
+    public interface IDecoratedVoronoiRegion<VERTEX, REGIONDATA, EDGEDATA, CELLDATA> : IVoronoiRegion<VERTEX>
         where VERTEX : class, IVertex, new ()
         where REGIONDATA : new ()
             where EDGEDATA : new ()
             where CELLDATA : new ()
     {
+        REGIONDATA UserData
+        {
+            get;
+        }
+        
         IList<IDecoratedDelaunayCell<VERTEX, CELLDATA>> DecoratedCells
         {
             get;
         }
         
-        IList<IDecoratedVoronoiRegion<VERTEX, REGIONDATA, EDGEDATA, CELLDATA>> DecoratedRegions
+        IList<IDecoratedVoronoiEdge<VERTEX, EDGEDATA, CELLDATA>> DecoratedEdges
         {
             get;
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

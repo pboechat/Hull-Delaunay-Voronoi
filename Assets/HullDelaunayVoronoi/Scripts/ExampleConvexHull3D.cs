@@ -1,8 +1,6 @@
-﻿using UnityEngine;
-using System.Collections.Generic;
-
-using HullDelaunayVoronoi.Hull;
+﻿using HullDelaunayVoronoi.Hull;
 using HullDelaunayVoronoi.Primitives;
+using UnityEngine;
 
 namespace HullDelaunayVoronoi
 {
@@ -29,32 +27,26 @@ namespace HullDelaunayVoronoi
         private void Start()
         {
             lineMaterial = new Material(Shader.Find("Hidden/Internal-Colored"));
-
             mesh = new Mesh();
             Vertex3[] vertices = new Vertex3[NumberOfVertices];
-
             Vector3[] meshVerts = new Vector3[NumberOfVertices];
             int[] meshIndices = new int[NumberOfVertices];
-
             Random.InitState(seed);
+
             for (int i = 0; i < NumberOfVertices; i++)
             {
                 float x = size * Random.Range(-1.0f, 1.0f);
                 float y = size * Random.Range(-1.0f, 1.0f);
                 float z = size * Random.Range(-1.0f, 1.0f);
-
                 vertices[i] = new Vertex3(x, y, z);
-
                 meshVerts[i] = new Vector3(x, y, z);
                 meshIndices[i] = i;
             }
 
             mesh.vertices = meshVerts;
             mesh.SetIndices(meshIndices, MeshTopology.Points, 0);
-
             hull = new ConvexHull3();
             hull.Generate(vertices);
-
         }
 
         private void Update()
@@ -62,7 +54,6 @@ namespace HullDelaunayVoronoi
             if (Input.GetKey(KeyCode.KeypadPlus) || Input.GetKey(KeyCode.KeypadMinus))
             {
                 theta += (Input.GetKey(KeyCode.KeypadPlus)) ? 0.005f : -0.005f;
-
                 rotation[0, 0] = Mathf.Cos(theta);
                 rotation[0, 2] = Mathf.Sin(theta);
                 rotation[2, 0] = -Mathf.Sin(theta);
@@ -79,15 +70,15 @@ namespace HullDelaunayVoronoi
 
         private void OnPostRender()
         {
-
-            if (hull == null || hull.Simplexs.Count == 0 || hull.Vertices.Count == 0) return;
+            if (hull == null || hull.Simplexs.Count == 0 || hull.Vertices.Count == 0)
+            {
+                return;
+            }
 
             GL.PushMatrix();
-
             GL.LoadIdentity();
             GL.MultMatrix(GetComponent<Camera>().worldToCameraMatrix * rotation);
             GL.LoadProjectionMatrix(GetComponent<Camera>().projectionMatrix);
-
             lineMaterial.SetPass(0);
             GL.Begin(GL.LINES);
             GL.Color(Color.red);
@@ -98,7 +89,6 @@ namespace HullDelaunayVoronoi
             }
 
             GL.End();
-
             GL.PopMatrix();
         }
 
@@ -106,10 +96,8 @@ namespace HullDelaunayVoronoi
         {
             GL.Vertex3(f.Vertices[0].X, f.Vertices[0].Y, f.Vertices[0].Z);
             GL.Vertex3(f.Vertices[1].X, f.Vertices[1].Y, f.Vertices[1].Z);
-
             GL.Vertex3(f.Vertices[0].X, f.Vertices[0].Y, f.Vertices[0].Z);
             GL.Vertex3(f.Vertices[2].X, f.Vertices[2].Y, f.Vertices[2].Z);
-
             GL.Vertex3(f.Vertices[1].X, f.Vertices[1].Y, f.Vertices[1].Z);
             GL.Vertex3(f.Vertices[2].X, f.Vertices[2].Y, f.Vertices[2].Z);
         }

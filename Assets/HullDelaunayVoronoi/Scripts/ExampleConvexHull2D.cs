@@ -1,8 +1,7 @@
-﻿using UnityEngine;
-using System.Collections.Generic;
-
-using HullDelaunayVoronoi.Hull;
+﻿using HullDelaunayVoronoi.Hull;
 using HullDelaunayVoronoi.Primitives;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace HullDelaunayVoronoi
 {
@@ -25,34 +24,31 @@ namespace HullDelaunayVoronoi
         private void Start()
         {
             lineMaterial = new Material(Shader.Find("Hidden/Internal-Colored"));
-
             vertices = new List<Vertex2>();
-
             Random.InitState(seed);
+
             for (int i = 0; i < NumberOfVertices; i++)
             {
                 float x = size * Random.Range(-1.0f, 1.0f);
                 float y = size * Random.Range(-1.0f, 1.0f);
-
                 vertices.Add(new Vertex2(x, y));
             }
 
             hull = new ConvexHull2();
             hull.Generate(vertices);
-
         }
 
         private void OnPostRender()
         {
-
-            if (hull == null || hull.Simplexs.Count == 0 || hull.Vertices.Count == 0) return;
+            if (hull == null || hull.Simplexs.Count == 0 || hull.Vertices.Count == 0)
+            {
+                return;
+            }
 
             GL.PushMatrix();
-
             GL.LoadIdentity();
             GL.MultMatrix(GetComponent<Camera>().worldToCameraMatrix);
             GL.LoadProjectionMatrix(GetComponent<Camera>().projectionMatrix);
-
             lineMaterial.SetPass(0);
             GL.Begin(GL.LINES);
             GL.Color(Color.red);
@@ -87,7 +83,6 @@ namespace HullDelaunayVoronoi
             float x = v.X;
             float y = v.Y;
             float s = 0.05f;
-
             GL.Vertex3(x + s, y + s, 0.0f);
             GL.Vertex3(x + s, y - s, 0.0f);
             GL.Vertex3(x - s, y - s, 0.0f);

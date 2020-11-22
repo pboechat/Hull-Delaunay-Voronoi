@@ -1,32 +1,45 @@
 ﻿using System;
-using System.Collections;
 
 namespace HullDelaunayVoronoi.Primitives
 {
-
     public class Vertex2 : Vertex
     {
+        public static readonly Vertex2 Zero = new Vertex2(0, 0);
+        public static readonly Vertex2 UnitX = new Vertex2(1, 0);
+        public static readonly Vertex2 UnitY = new Vertex2(0, 1);
 
         public float X
         {
-            get { return Position[0]; }
-            set { Position[0] = value; }
+            get
+            {
+                return Position[0];
+            }
+
+            set
+            {
+                Position[0] = value;
+            }
         }
 
         public float Y
         {
-            get { return Position[1]; }
-            set { Position[1] = value; }
+            get
+            {
+                return Position[1];
+            }
+
+            set
+            {
+                Position[1] = value;
+            }
         }
 
         public Vertex2() : base(2)
         {
-
         }
 
         public Vertex2(int id) : base(2, id)
         {
-
         }
 
         public Vertex2(float x, float y)
@@ -49,10 +62,7 @@ namespace HullDelaunayVoronoi.Primitives
         {
             float x = Position[0] - px;
             float y = Position[1] - py;
-
             return x * x + y * y;
         }
-
-
     }
 }
