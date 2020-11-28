@@ -1,4 +1,4 @@
-# Hull-Delaunay-Voronoi
+# HullDelaunayVoronoi
 
 This project shows how to calculate the Convex Hull, Delaunay triangulation or Voronoi diagram from a random set of points. The project is based of the [MIConvex Hull](https://designengrlab.github.io/MIConvexHull/) code but I have restructured it a bit and extended the Delaunay and Voronoi parts.
 
